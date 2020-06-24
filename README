@@ -6,27 +6,27 @@ install required libraries:
 
 Usage Example:
 
-from matplotsim import matplotsim
-import time
-import math
-import keyboard
+    from matplotsim import matplotsim
+    import time
+    import math
+    import keyboard
 
-graphics=matplotsim.Graphics(-50,50,-50,50) #plot bounds, x: -50 to 50, y from -50 to 50 as well
-bicycle1=matplotsim.Bicycle(0,0,0,0)
-bicycle2=matplotsim.Bicycle(0,-5,0,0)
-graphics.add_bicycle(bicycle1)
-graphics.add_bicycle(bicycle2)
+    graphics=matplotsim.Graphics(-50,50,-50,50) #plot bounds, x: -50 to 50, y from -50 to 50 as well
+    bicycle1=matplotsim.Bicycle(0,0,0,0)
+    bicycle2=matplotsim.Bicycle(0,-5,0,0)
+    graphics.add_bicycle(bicycle1)
+    graphics.add_bicycle(bicycle2)
 
-#run a time limited simulation (not infinite/looping)
-for tick in range(100):
+    #run a time limited simulation (not infinite/looping)
+    for tick in range(100):
 
-    #hold q to quit, will still work if you convert to using an infinite loop isntead of a timed simulation
-    if not keyboard.is_pressed('q'):
+        #hold q to quit, will still work if you convert to using an infinite loop isntead of a timed simulation
+        if not keyboard.is_pressed('q'):
 
-        graphics.draw()
-        bicycle1.update(5,0) #acceleration of 5, steering angle of 0
-        bicycle2.update(5,math.pi/10) #acceleration of 5, steering angle of 0
-       
-        #in order to work, the graphics itself must sleep 1ms, so total sleep time is 0.101 seconds
-        time.sleep(0.1)
+            graphics.draw()
+            bicycle1.update(5,0) #acceleration of 5, steering angle of 0
+            bicycle2.update(5,math.pi/10) #acceleration of 5, steering angle of 0
+        
+            #in order to work, the graphics itself must sleep 1ms, so total sleep time is 0.101 seconds
+            time.sleep(0.1)
 
