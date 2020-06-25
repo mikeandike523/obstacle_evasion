@@ -16,6 +16,8 @@ class Bicycle:
         self.path=[]
         self.calculate_vectors()
         self.steering_behaviour=lambda bicycle: (0,0)
+        self.update_path_behaviour=lambda bicycle, opponents: None
+        self.target=None
     def update(self,acceleration=0,steeringAngle=0,timeStep=0.1):
         self.x += self.v * math.cos(self.yaw) * timeStep
         self.y += self.v * math.sin(self.yaw) * timeStep
@@ -36,31 +38,37 @@ class Bicycle:
         self.position=point(self.x,self.y)
         self.velocity=point(math.cos(self.yaw)*self.v,math.sin(self.yaw)*self.v)
         
-    def get_lookahead_point(self,lookahead_distance=15,distance_resolution=0.05):
+    def get_lookahead_point(self,lookahead_distance=8,distance_resolution=0.05):
         min_dist=100000000
         nearest=None
         for i in range(len(self.path)-1):
-            try:
+           
                 this=self.path[i]
                 next=self.path[i+1]
                 dirvec=next.sub(this)
                 dirvecn=dirvec.normalized()
                 for j in range(math.floor(dirvec.magnitude()/distance_resolution)):
-                    newvec=this.sum(dirvecn.scaled(j*distance_resolution))
-                    distvec=newvec.sub(self.position)
-                    dist=distvec.magnitude()
-                    if dist<min_dist and dist < 1.2*lookahead_distance and dist >=lookahead_distance and distvec.scalarProjOnto(self.velocity) >0.001:
-                        min_dist=dist
-                        nearest=newvec
-            except:
-                pass
+                    try:
+                        newvec=this.sum(dirvecn.scaled(j*distance_resolution))
+                        distvec=newvec.sub(self.position)
+                        dist=distvec.magnitude()
+                        if dist<min_dist and dist < 2*lookahead_distance and dist >=lookahead_distance and distvec.scalarProjOnto(self.velocity) >0.01:
+                            min_dist=dist
+                            nearest=newvec
+                    except:
+                        pass
         return nearest
         
     def set_steering_behaviour(self,behaviour):
         self.steering_behaviour=behaviour
     def steer(self):
         return self.steering_behaviour(self)
-        
+    def set_update_path_behaviour(self,behaviour):
+        self.update_path_behaviour=behaviour
+    def update_path(self,opponents):
+        self.update_path_behaviour(self,opponents)
+    def set_target(self,target):
+        self.target=target.copy()
 
 class Simulator():
 
@@ -104,6 +112,9 @@ class Simulator():
             for bicycle in self.bicycles:
                 screenCoords=self.getScreenCoords(bicycle.position)
                 pygame.draw.ellipse(self.screen,(255,0,0),pygame.Rect(screenCoords.x-5,screenCoords.y-7,15,15))
+                if bicycle.target != None:
+                    screenCoords2=self.getScreenCoords(bicycle.target)
+                    pygame.draw.ellipse(self.screen,(255,0,255),pygame.Rect(screenCoords2.x-5,screenCoords2.y-7,10,10))
                 velocScreenCoords=self.getScreenCoords(bicycle.position.sum(bicycle.velocity))
                 pygame.draw.line(self.screen,(0,0,255),screenCoords.asTuple(),velocScreenCoords.asTuple(),2)
                 if len(bicycle.path)>=2:
@@ -112,17 +123,28 @@ class Simulator():
                         #point 1 screen coords
                         pt1sc=self.getScreenCoords(bicycle.path[i])
                         pt2sc=self.getScreenCoords(bicycle.path[i+1])
-                        pygame.draw.line(self.screen,(0,255,0),pt1sc.asTuple(),pt2sc.asTuple(),5)
+                        pygame.draw.line(self.screen,(0,255,0),pt1sc.asTuple(),pt2sc.asTuple(),1)
                         
                     
-            pygame.display.flip()
+            
             for bicycle in self.bicycles:
                 a,d=bicycle.steer()
+                opponents=[]
+                for test_bicycle in self.bicycles:
+                    if test_bicycle is not bicycle:
+                        opponents.append(test_bicycle)
+                bicycle.update_path(opponents)
                 bicycle.update(a,d)
+                
+            pygame.display.flip()
             clock.tick(1/self.timeStep)
 
     def add_bicycle(self,bicycle):
         self.bicycles.append(bicycle)
+    
+    def plot(self,pt):
+        screenCoords=self.getScreenCoords(pt)
+        pygame.draw.ellipse(self.screen,(0,0,0),(screenCoords.x-2,screenCoords.y-2,5,5),0)
     
 
    
