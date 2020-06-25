@@ -43,3 +43,5 @@ class point:
         return point(self.x,self.y)
     def getLeft(self):
         return point(-self.y,self.x)
+    def asTuple(self):
+        return (self.x,self.y)
