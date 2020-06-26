@@ -77,19 +77,17 @@ bicycle3=matplotsim.Bicycle(-70,0,0,0)
 def simple_planner(bicycle,opponents):
     target=simulator.mouse()
     bicycle.clear_path()
-    vec_bicycle_target=target.sub(bicycle.position)
-    vec_bicycle_targetn=vec_bicycle_target.normalized()
-    distance=vec_bicycle_target.magnitude()
-    try:
-        for i in range(math.floor(distance/0.1)):
-            bicycle.add_to_path(bicycle.position.sum(vec_bicycle_targetn.scaled(i*0.1)))
-        for i in range(len(bicycle.path)):
-            path_point=bicycle.path[i].copy()
-            for opponent in opponents:
-                    path_point=path_point.sum(opponent.position.sub(path_point).normalized().scaled(-1*30/opponent.position.sub(path_point).magnitude()))
-                    bicycle.path[i]=path_point
-    except:
-        pass
+    rope_point=bicycle.position.copy()
+    bicycle.add_to_path(rope_point)
+    for i in range (100):
+        next_point=rope_point.sum(target.sub(rope_point).normalized().scaled(1))
+        for opponent in opponents:
+            next_point=next_point.sum(opponent.position.sub(next_point).normalized().scaled(-20/(opponent.position.sub(next_point).magnitude()*len(opponents))))
+        angle=next_point.sub(rope_point).angleOf()
+        next_point=rope_point.sum(point(math.cos(angle)*1,math.sin(angle)*1))
+        bicycle.add_to_path(next_point)
+        rope_point=next_point
+    
 
 
 bicycle3.set_update_path_behaviour(simple_planner)
