@@ -53,7 +53,7 @@ class Bicycle:
                         newvec=this.sum(dirvecn.scaled(j*distance_resolution))
                         distvec=newvec.sub(self.position)
                         dist=distvec.magnitude()
-                        if dist<min_dist and dist < 1.6*lookahead_distance and dist >=lookahead_distance and distvec.scalarProjOnto(self.velocity) >0.01 and distvec.angleTo(self.velocity)<math.pi/6:
+                        if dist<min_dist and dist < 1.6*lookahead_distance and dist >=lookahead_distance and distvec.scalarProjOnto(self.velocity) >0.01 and distvec.angleTo(self.velocity)<math.pi/2.2:
                             min_dist=dist
                             nearest=newvec
                     except:
