@@ -15,26 +15,40 @@ def simple_path_follower(bicycle,targetSpeed=15):
    
         
     lookahead_point=bicycle.get_lookahead_point()
-    steeringAngle=math.pi/8
+    steeringAngle=0
     left=bicycle.velocity.getLeft()
-    if lookahead_point != None:
+    isFinding=False
+    if lookahead_point is None:
+        vec_bicycle_mouse=simulator.mouse().sub(bicycle.position)
+        steeringAngle=math.pi/6
+        try:
+            if vec_bicycle_mouse.scalarProjOnto(left)<0:
+                steeringAngle*=-1
+        except:
+            pass
+        isFinding=True
+    else:    
         simulator.plot(lookahead_point)
-     
         vec_bicycle_la=lookahead_point.sub(bicycle.position)
         try:
+     
             steeringAngle=vec_bicycle_la.angleTo(bicycle.velocity)
             if vec_bicycle_la.scalarProjOnto(left) < 0 :
                 steeringAngle *= -1
         except:
-            pass
-    targetSpeed*=(1-steeringAngle/(2*math.pi))       
+            steeringAngle=math.pi/6
+   
+        
+    
+    #targetSpeed*=(1-steeringAngle/(2*math.pi))       
     if bicycle.v < targetSpeed:
         acceleration=targetSpeed/2
     else:
         acceleration=-targetSpeed/2*1.5
-    if bicycle.target != None:        
-        if bicycle.position.sub(bicycle.target).magnitude() < 15:
-            bicycle.set_target(point(random.randint(-45,45),random.randint(-25,25)))
+    
+   # if isFinding:
+      #  acceleration=5
+
     return (acceleration,steeringAngle)
     
 
@@ -61,8 +75,9 @@ bicycle2.set_steering_behaviour(simple_path_follower)
 bicycle3=matplotsim.Bicycle(-70,0,0,0)
 #target is to get to 70,0
 def simple_planner(bicycle,opponents):
+    target=simulator.mouse()
     bicycle.clear_path()
-    vec_bicycle_target=bicycle.target.sub(bicycle.position)
+    vec_bicycle_target=target.sub(bicycle.position)
     vec_bicycle_targetn=vec_bicycle_target.normalized()
     distance=vec_bicycle_target.magnitude()
     try:
@@ -79,7 +94,6 @@ def simple_planner(bicycle,opponents):
 
 bicycle3.set_update_path_behaviour(simple_planner)
 bicycle3.set_steering_behaviour(simple_path_follower)
-bicycle3.set_target(point(random.randint(-45,45),random.randint(-25,25)))   
 simulator.add_bicycle(bicycle1)
 simulator.add_bicycle(bicycle2)
 simulator.add_bicycle(bicycle3)

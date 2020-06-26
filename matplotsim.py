@@ -2,7 +2,7 @@ import math
 from geometry import point
 import pygame
 clock = pygame.time.Clock()
-
+from utils import clamp
 #paths are global to the corordinate system even for each bicycle
 class Bicycle:
     def __init__(self,x,y,yaw,v,WB=2.9):
@@ -17,8 +17,9 @@ class Bicycle:
         self.calculate_vectors()
         self.steering_behaviour=lambda bicycle: (0,0)
         self.update_path_behaviour=lambda bicycle, opponents: None
-        self.target=None
     def update(self,acceleration=0,steeringAngle=0,timeStep=0.1):
+        
+        steeringAngle=clamp(steeringAngle,-math.pi/2.2,math.pi/2.2)
         self.x += self.v * math.cos(self.yaw) * timeStep
         self.y += self.v * math.sin(self.yaw) * timeStep
         self.yaw += self.v / self.WB * math.tan(steeringAngle) * timeStep
@@ -52,7 +53,7 @@ class Bicycle:
                         newvec=this.sum(dirvecn.scaled(j*distance_resolution))
                         distvec=newvec.sub(self.position)
                         dist=distvec.magnitude()
-                        if dist<min_dist and dist < 2*lookahead_distance and dist >=lookahead_distance and distvec.scalarProjOnto(self.velocity) >0.01:
+                        if dist<min_dist and dist < 1.6*lookahead_distance and dist >=lookahead_distance and distvec.scalarProjOnto(self.velocity) >0.01 and distvec.angleTo(self.velocity)<math.pi/6:
                             min_dist=dist
                             nearest=newvec
                     except:
@@ -67,8 +68,7 @@ class Bicycle:
         self.update_path_behaviour=behaviour
     def update_path(self,opponents):
         self.update_path_behaviour(self,opponents)
-    def set_target(self,target):
-        self.target=target.copy()
+
 
 class Simulator():
 
@@ -85,6 +85,7 @@ class Simulator():
         self.screen = pygame.display.set_mode((self.xPixels, self.yPixels))
         self.bicycles=[]
         self.path=[]
+        self.mouse_position=point(0,0)
         
     def getScreenCoords(self,worldCoords):
         scaleFactorX=self.xPixels/(self.maxX-self.minX)
@@ -97,24 +98,22 @@ class Simulator():
         scaleFactorX=self.xPixels/(self.maxX-self.minX)
         worldX=self.minX+screenCoords.x/scaleFactorX
         scaleFactorY=self.yPixels/(self.maxY-self.minY)
-        worldY=self.minY+(self.yPixels-screenCoords.y)
+        worldY=self.minY+(self.yPixels-screenCoords.y)/scaleFactorY
         return point(worldX,worldY)
 
-        
+    def mouse(self):
+        return self.mouse_position
     def loop(self):
         done = False
         while not done:
             for event in pygame.event.get():
                 if event.type == pygame.QUIT:
                     return
-            
+            self.mouse_position=self.getWorldCoords(point(*pygame.mouse.get_pos()))
             self.screen.fill((255,255,255))
             for bicycle in self.bicycles:
                 screenCoords=self.getScreenCoords(bicycle.position)
                 pygame.draw.ellipse(self.screen,(255,0,0),pygame.Rect(screenCoords.x-5,screenCoords.y-7,15,15))
-                if bicycle.target != None:
-                    screenCoords2=self.getScreenCoords(bicycle.target)
-                    pygame.draw.ellipse(self.screen,(255,0,255),pygame.Rect(screenCoords2.x-5,screenCoords2.y-7,10,10))
                 velocScreenCoords=self.getScreenCoords(bicycle.position.sum(bicycle.velocity))
                 pygame.draw.line(self.screen,(0,0,255),screenCoords.asTuple(),velocScreenCoords.asTuple(),2)
                 if len(bicycle.path)>=2:
