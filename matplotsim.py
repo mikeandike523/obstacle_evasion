@@ -5,6 +5,7 @@ clock = pygame.time.Clock()
 from utils import clamp
 #paths are global to the corordinate system even for each bicycle
 class Bicycle:
+    
     def __init__(self,x,y,yaw,v,WB=2.9):
         self.x = x
         self.y = y
@@ -19,7 +20,10 @@ class Bicycle:
         self.update_path_behaviour=lambda bicycle, opponents: None
     def update(self,acceleration=0,steeringAngle=0,timeStep=0.1):
         
+        #added
         steeringAngle=clamp(steeringAngle,-math.pi/2.2,math.pi/2.2)
+        
+        
         self.x += self.v * math.cos(self.yaw) * timeStep
         self.y += self.v * math.sin(self.yaw) * timeStep
         self.yaw += self.v / self.WB * math.tan(steeringAngle) * timeStep
