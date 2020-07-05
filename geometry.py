@@ -45,3 +45,32 @@ class point:
         return point(-self.y,self.x)
     def asTuple(self):
         return (self.x,self.y)
+
+class segment:
+
+    def __init__(self,a,b):
+        self.a=a
+        self.b=b
+    
+    def intersect_segment(self,other):
+        #q1=r1+t1v1
+        #q2=r2+t2v2
+        #r1+t1v1=r2+t2v2
+        #r1-r2=[-v1 v2](t1,t2)
+        #(t1,t2)=[-v1 v2]^(-1) (r1-r2)
+        r1=self.a
+        r2=other.a
+        v1=self.b.sub(self.a).normalized()
+        len1=v1.magnitude()
+        v2=other.b.sub(other.a).normalized()
+        len2=v2.magnitude()
+        left_side=r1.sub(r2)
+        determinant=(-v1.x*v2.y)-(v2.x*(-v1.y))
+        if determinant < 0.001:
+            return None
+        inv1=point(v2.y,v1.y).scaled(1/determinant)
+        inv2=point(-v2.x,-v1.x).scaled*(1/determinant)
+        t1=left_side.x*inv1.x+left_side.y*inv2.x
+        t2=left_side.x*inv1.x+left_side.y*inv2.x
+        if t1>0 and t1<len1 and t2>0 and t2 < len2:
+            return r1.sum(v1.scaled(t1)).copy() #.copy() just in case (probs not needed)
