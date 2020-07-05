@@ -16,6 +16,8 @@ class Car:
         self.rear_y = self.y - ((self.WB / 2) * math.sin(self.yaw))
         self.calculate_vectors()
         self.steering_behaviour=lambda car: (0,0)
+        self.rays=[]
+     
         
     def update(self,acceleration=0,steeringAngle=0,timeStep=0.05):
         steeringAngle=clamp(steeringAngle,-math.pi/2,math.pi/2)
@@ -33,12 +35,33 @@ class Car:
 
     def plot(self):
         plt.arrow(self.x,self.y,math.cos(self.yaw)*4.5,math.sin(self.yaw)*4.5,length_includes_head=True,head_length=4.5,head_width=1.8)
+        for ray in self.rays:
+            plt.plot([ray.a.x,ray.b.x],[ray.a.y,ray.b.y],'r-')
+      
 
     def steer(self):
        return self.steering_behaviour(self)
 
     def set_steering_behaviour(self,behaviour):
         self.steering_behaviour=behaviour
+
+    def update_rays(self,walls):
+            while len(self.rays) >0:
+                self.rays.pop()
+            for i in range (41):
+                angle=math.pi*i/40;
+                cast = self.position.sum(point(math.cos(angle)*20,math.sin(angle)*20))
+                for wall in walls:
+                    #for some reason both directions are needed
+                    intersection=segment(self.position,cast).intersect_segment(wall)
+                    if intersection is None:
+                        intersection=wall.intersect_segment(segment(self.position,cast))
+
+
+                    if intersection is not None:
+                        self.rays.append(segment(self.position,intersection))
+                    
+
 
 class Simulator():
 
@@ -61,14 +84,15 @@ class Simulator():
 
            #plot track boundaries
            for wall in self.track_boundaries:
-               plt.plot([wall.a.x,wall.b.x],[wall.a.y,wall.b.y],'b-')
+               plt.plot([wall.a.x,wall.b.x],[wall.a.y,wall.b.y],'k-')
        
 
            self.ego_vehicle.plot()
            
            #physics update
-           for i in range(5):
+           for i in range(6):
             self.ego_vehicle.update(*self.ego_vehicle.steer(),self.timeStep)
+           self.ego_vehicle.update_rays(self.track_boundaries)
 
 
            plt.pause(self.timeStep*2)
@@ -92,18 +116,17 @@ if __name__=="__main__":
     simulator=Simulator(0.05)
 
     #build the simulator track boundaries (left and right edges of track)
-    for i in range (-5,20):
-        simulator.add_track_boundary(segment(point(7.62,i*10),point(7.62,i*10+10)))
-        simulator.add_track_boundary(segment(point(-7.62,i*10),point(-7.62,i*10+10)))
+    simulator.add_track_boundary(segment(point(-7.62,-20),point(-7.62,100)))
+    simulator.add_track_boundary(segment(point(7.62,-20),point(7.62,100)))
+    
 
     def basic_steering(car):
-        acceleration=20-car.v
+        acceleration=10-car.v
         steeringAngle=0
         return acceleration,steeringAngle
             
     car=Car()
     car.set_steering_behaviour(basic_steering)
     simulator.set_ego_vehicle(car)
-
     simulator.loop()
    

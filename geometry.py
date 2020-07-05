@@ -46,11 +46,31 @@ class point:
     def asTuple(self):
         return (self.x,self.y)
 
-class segment:
+
+class segment: #also serves as a 2x2 matrix, column major
 
     def __init__(self,a,b):
-        self.a=a
-        self.b=b
+        self.a=a.copy()
+        self.b=b.copy()
+
+    def left_multiply_point(self,pt):
+        a=self.a.x
+        b=self.b.x
+        c=self.a.y
+        d=self.b.y
+        i=pt.x
+        j=pt.y
+        return point(a*i+b*j, c*i+d*j)
+    
+    def inverse(self):
+        a=self.a.x
+        b=self.b.x
+        c=self.a.y
+        d=self.b.y
+        det=a*d-b*c
+        if det<0.001:
+            return None
+        return segment(point(d,-c).scaled(1/det),point(-b,a).scaled(1/det))
     
     def intersect_segment(self,other):
         #q1=r1+t1v1
@@ -60,17 +80,16 @@ class segment:
         #(t1,t2)=[-v1 v2]^(-1) (r1-r2)
         r1=self.a
         r2=other.a
-        v1=self.b.sub(self.a).normalized()
-        len1=v1.magnitude()
-        v2=other.b.sub(other.a).normalized()
-        len2=v2.magnitude()
+        v1=self.b.sub(self.a)
+        v2=other.b.sub(other.a)
         left_side=r1.sub(r2)
-        determinant=(-v1.x*v2.y)-(v2.x*(-v1.y))
-        if determinant < 0.001:
+        inv=segment(v1.scaled(-1),v2).inverse()
+        if inv==None:
             return None
-        inv1=point(v2.y,v1.y).scaled(1/determinant)
-        inv2=point(-v2.x,-v1.x).scaled*(1/determinant)
-        t1=left_side.x*inv1.x+left_side.y*inv2.x
-        t2=left_side.x*inv1.x+left_side.y*inv2.x
-        if t1>0 and t1<len1 and t2>0 and t2 < len2:
-            return r1.sum(v1.scaled(t1)).copy() #.copy() just in case (probs not needed)
+        t=inv.left_multiply_point(left_side)
+        
+        t1=t.x
+        t2=t.y
+        if t1>0 and t1<1 and t2>0 and t2 < 1:
+            return r1.sum(v1.scaled(t1))
+        return None
