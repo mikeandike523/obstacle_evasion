@@ -3,6 +3,7 @@ from geometry import point,segment
 import matplotlib.pyplot as plt
 from utils import clamp
 import keyboard
+
 #paths are global to the corordinate system even for each car
 class Car:
     
@@ -48,9 +49,11 @@ class Car:
     def update_rays(self,walls):
             while len(self.rays) >0:
                 self.rays.pop()
-            for i in range (41):
-                angle=math.pi*i/40;
+            for i in range (21):
+                angle=-math.pi/2+math.pi*i/20+self.yaw;
                 cast = self.position.sum(point(math.cos(angle)*20,math.sin(angle)*20))
+                ray_len=100000000000000
+                result_ray=None
                 for wall in walls:
                     #for some reason both directions are needed
                     intersection=segment(self.position,cast).intersect_segment(wall)
@@ -58,9 +61,14 @@ class Car:
                         intersection=wall.intersect_segment(segment(self.position,cast))
 
 
-                    if intersection is not None:
-                        self.rays.append(segment(self.position,intersection))
-                    
+                    if intersection is not None:    
+                        test_result_ray=segment(self.position,intersection)
+                        test_ray_len=test_result_ray.b.sub(test_result_ray.a).magnitude()
+                        if test_ray_len<ray_len:
+                            ray_len=test_ray_len
+                            result_ray=test_result_ray
+                if result_ray!=None:
+                    self.rays.append(result_ray)
 
 
 class Simulator():
@@ -94,7 +102,7 @@ class Simulator():
             self.ego_vehicle.update(*self.ego_vehicle.steer(),self.timeStep)
            self.ego_vehicle.update_rays(self.track_boundaries)
 
-
+           plt.grid()
            plt.pause(self.timeStep*2)
 
     def set_ego_vehicle(self,car):
@@ -114,18 +122,31 @@ class Simulator():
 if __name__=="__main__":
 
     simulator=Simulator(0.05)
+    import csv
+    with open('fences.csv', 'r') as file:
+        reader = csv.reader(file,delimiter='\t')
+        for row in reader:
+            simulator.add_track_boundary(segment(point(float(row[0]),float(row[1])),point(float(row[2]),float(row[3]))))
 
-    #build the simulator track boundaries (left and right edges of track)
-    simulator.add_track_boundary(segment(point(-7.62,-20),point(-7.62,100)))
-    simulator.add_track_boundary(segment(point(7.62,-20),point(7.62,100)))
-    
+
 
     def basic_steering(car):
-        acceleration=10-car.v
+        
         steeringAngle=0
+        for ray in car.rays:
+            try:
+                rayAngle=ray.b.sub(ray.a).angleTo(car.velocity)
+                if ray.b.sub(ray.a).scalarProjOnto(car.velocity.getLeft())<0:
+                    rayAngle*=-1
+                steeringAngle-=math.pi/40*rayAngle/abs(rayAngle)*(1-abs(rayAngle)/(math.pi/2))*math.exp(abs(ray.b.sub(ray.a).magnitude()-10)/10)
+            except:
+                #bad alignment between angles
+                pass
+        acceleration=10-car.v
+        
         return acceleration,steeringAngle
             
-    car=Car()
+    car=Car(50+7.62)
     car.set_steering_behaviour(basic_steering)
     simulator.set_ego_vehicle(car)
     simulator.loop()
