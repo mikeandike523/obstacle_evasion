@@ -53,6 +53,9 @@ class segment: #also serves as a 2x2 matrix, column major
         self.a=a.copy()
         self.b=b.copy()
 
+
+    def length(self):
+        return self.b.sub(self.a).magnitude()
     def left_multiply_point(self,pt):
         a=self.a.x
         b=self.b.x
